@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<ccsVariant value="50:Theia-based"/>
+	<ccsVersion value="71.0.0"/>
+	<deviceFamily value="C2000"/>
+	<executableActions value=""/>
+	<createSlaveProjects value=""/>
+	<templateProperties value="id=epwm_ex2_updown_aq.projectspec.epwm_ex2_updown_aq"/>
+	<origin value="/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/examples/cpu1/epwm/CCS/epwm_ex2_updown_aq.projectspec"/>
+	<filesToOpen value=""/>
+</projectOptions>
