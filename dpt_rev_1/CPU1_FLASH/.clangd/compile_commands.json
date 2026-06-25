@@ -1,0 +1,17 @@
+[
+   {
+      "directory" : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_RAM",
+      "command"   : "clang++ -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1\" -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/device\" -I\"/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/\" -I\"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/include\" -DDEBUG -DCPU1 -D_FLASH -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_FLASH/syscfg\"",
+      "file"      : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/device/F2837xD_CodeStartBranch.asm"
+   },
+   {
+      "directory" : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_RAM",
+      "command"   : "clang++ -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1\" -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/device\" -I\"/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/\" -I\"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/include\" -DDEBUG -DCPU1 -D_FLASH -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_FLASH/syscfg\" -xc",
+      "file"      : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/device/device.c"
+   },
+   {
+      "directory" : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_RAM",
+      "command"   : "clang++ -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1\" -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/device\" -I\"/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/\" -I\"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/include\" -DDEBUG -DCPU1 -D_FLASH -I\"/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/CPU1_FLASH/syscfg\" -xc",
+      "file"      : "/Users/josephinewilliams/Desktop/research-gits/dpt-f2837xd/dpt_rev_1/double_pulse_test.c"
+   }
+]
