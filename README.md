@@ -5,9 +5,9 @@ other todo// fix sysconfig files so it doesn't reference example code (mostly to
 
 notes//
 
-GPIO0/EPWM1A     = pin 160 on board
+EPWM1A, DPT Pulse     = GPIO 0 / pin 49 on control card
 
-GPIO2/EPWM2A     = pin 162 on board
+EPWM2A, Chg Pulse     = GPIO 2 / pin 53 on control card
 
-GPIO22/ProbePin  = pin 22 on board
+DPT_Probe             = GPIO 35 / pin 121 on control card
 
