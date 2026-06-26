@@ -1,35 +1,35 @@
-/*
- * double_pulse_test.c
- *
- * Double Pulse Test — TMS320F2837xD (CPU1)
- *
- * five sections right now:
- *      - starts with initial burst on GPIO0 [ePWM1A] to charge the bootstrap caps. 
-          next, goes into actual DPT with GPIO2 [ePWM2A]. 
-        - deadtime
-        - first pulse
-        - off-time
-        - second pulse 
-        - finished
- * timing can be configured below. 
- *
- * gpio22 is set up to be a "timing probe" -- basically shows when the sequence has begun/is in process
- * without having to probe all of the other gpios directly which is nice
- * 
- * TODO: include some information on how .sysconfig needs to be set up for the pins.
-*/
+// double_pulse_test.c
+// 
+// Double Pulse Test — TMS320F2837xD (CPU1)
+//
+// five sections right now:
+//  - starts with initial burst on GPIO0 [ePWM1A] to charge the bootstrap caps. 
+//    next, goes into actual DPT with GPIO2 [ePWM2A]. 
+//  - deadtime
+//  - pulse on
+//  - pulse off [repeat for configured num of cycles]
+//  - finished
+// timing can be configured below. 
+//
+// gpio35 is set up to be a "timing probe" -- basically shows when the sequence has begun/is in process
+// without having to probe all of the other gpios directly which is nice
+//
 
 #include "driverlib.h"
 #include "device.h"
 #include "board.h"
 
 //THESE ARE THE VALUES TO EDIT -- all timing is in us// 
-#define DPT_BOOT_CHARGE_US   20   // time to charge bootstrap cap 
-#define DPT_BOOT_GAP_US       3   // time after first pulse before DPT
-#define DPT_PULSE1_US        10   // first pulse
-#define DPT_DEADTIME_US       5   // off-time
-#define DPT_PULSE2_US         2   // second pulse
-#define DPT_SINGLE_SHOT       1   // 1 for one go-around, 0 will repeat forever
+#define DPT_BOOT_CHARGE_US  20  // time to charge bootstrap cap 
+#define DPT_BOOT_GAP_US     3   // time after first pulse before DPT
+#define DPT_PULSE_US        5  // first pulse
+#define DPT_DEADTIME_US     5   // off-time
+// #define DPT_PULSE2_US       2   // second pulse
+// #define DPT_SINGLE_SHOT       1   // 1 for one go-around, 0 will repeat forever
+
+#define DPT_NUM_PULSES      5U
+#define DPT_NUM_CYCLES      0U   // 0 goes on forever. 1,2,3, etc. gives finite number of cycles
+
 
 // CONSTANTS--
 // ePWM timer counts at SYSCLK/1 (200 MHz).
@@ -49,12 +49,16 @@
 #error "DPT_PULSE1_US exceeds 16-bit TBPRD. Add clock prescaler."
 #endif
 
+#if DPT_NUM_PULSES < 1U
+#error "DPT_NUM_PULSES must be at least 1."
+#endif
+
 #define DPT_SYSCLK_MHZ          ((float)DPT_SYSCLK_MHZ_INT)
 #define US_TO_TBCNT(us)         ((uint16_t)((us) * DPT_SYSCLK_MHZ))
 
-// for the scope -- again, will update on what this is doing after a bit more review
+// scope probe to track all of the pulses
 #ifndef DPT_PROBE_GPIO
-#define DPT_PROBE_GPIO   22U
+#define DPT_PROBE_GPIO   35U
 #endif
 #define PROBE_HIGH()     GPIO_writePin(DPT_PROBE_GPIO, 1)
 #define PROBE_LOW()      GPIO_writePin(DPT_PROBE_GPIO, 0)
@@ -76,7 +80,7 @@ do { \
     EPWM_forceActionQualifierSWAction(myEPWM2_BASE, (EPWM_ActionQualifierOutputModule)EPWM_AQ_OUTPUT_A); \
 } while(0)
 
-/* GATE SW-FORCE HELPERS */
+// GATE SW-FORCE HELPERS
 
 #define GATE_HIGH() \
 do { \
@@ -110,29 +114,29 @@ typedef enum {
     DPT_IDLE        = 0,
     DPT_BOOT_CHARGE = 1,
     DPT_BOOT_GAP    = 2,
-    DPT_PULSE1      = 3,
+    DPT_PULSE       = 3,
     DPT_DEADTIME    = 4,
-    DPT_PULSE2      = 5,
-    DPT_DONE        = 6
+    DPT_DONE        = 5
 } DPT_State;
 
 volatile DPT_State g_dptState = DPT_IDLE;
-
+volatile uint16_t  g_pulseIdx  = 0U;   // 0-based index of current pulse   
+volatile uint16_t  g_cycleCount = 0U;  // number of completed full cycles   
+ 
 
 // timestamps for timing analysis (again, all in microseconds) 
 // add to ccs -> view -> expressions
-//      (g_cycBootEnd - g_cycBootStart) / 200.0   → bootstrap charge time
-//      (g_cycP1Start - g_cycBootEnd)   / 200.0   → bootstrap gap
-//      (g_cycP1End   - g_cycP1Start)   / 200.0   → pulse 1
-//      (g_cycP2Start - g_cycP1End)     / 200.0   → dead-time
-//      (g_cycP2End   - g_cycP2Start)   / 200.0   → pulse 2
+//      (g_cycBootEnd - g_cycBootStart) / 200.0         -> bootstrap charge time
+//      (g_cycP1Start - g_cycBootEnd)   / 200.0         -> bootstrap gap
+//      (g_cycPulseEnd[n] - g_cycPulseStart[n]) / 200.0 -> pulse gap, depending on which n-pulse
 
+// todo -- figure out how to best work with debug mode
+// another todo -- remind self where to include u for the integers (and float decimals)
+// (up to this point, just doing what allows the code to compile/flash properly)
 volatile uint32_t g_cycBootStart = 0;
 volatile uint32_t g_cycBootEnd   = 0;
-volatile uint32_t g_cycP1Start   = 0;
-volatile uint32_t g_cycP1End     = 0;
-volatile uint32_t g_cycP2Start   = 0;
-volatile uint32_t g_cycP2End     = 0;
+volatile uint32_t g_cycPulseStart[DPT_NUM_PULSES]   = {0U};
+volatile uint32_t g_cycPulseEnd[DPT_NUM_PULSES]     = {0U};
 
 // declarations
 static void initEPWM1(void);
@@ -170,18 +174,23 @@ void main(void)
 
     // start the process
     armSequence();
-
     for(;;)
     {
         if(g_dptState == DPT_DONE)
         {
-    // check to see if we repeat the trial or stop after one
-#if DPT_SINGLE_SHOT
-            ESTOP0;   
-#else
-            DEVICE_DELAY_US(50.0f);   /* settling time before next burst */
-            armSequence();
-#endif
+            // check if we're actually done, or need to move onto the next cycle
+            // [0 means run forever]
+            if((DPT_NUM_CYCLES != 0U) && (g_cycleCount >= DPT_NUM_CYCLES))
+            {
+                // stop running 
+                ESTOP0;
+            }
+            else
+            {
+                // move to the next cycle
+                DEVICE_DELAY_US(DPT_INTER_CYCLE_US);
+                armSequence();
+            }
         }
     }
 }
@@ -194,6 +203,8 @@ static void armSequence(void)
 
     PROBE_HIGH();                           // triggers on the scope
     g_cycBootStart = readCycleCounter();    // ----
+    
+    g_pulseIdx = 0U;
     g_dptState = DPT_BOOT_CHARGE;
 
     // start it up
@@ -227,39 +238,42 @@ __interrupt void epwm1ISR(void)
             PROBE_TOGGLE();                  
             GATE_HIGH();                    
 
-            g_dptState = DPT_PULSE1;
-            SET_PHASE_DURATION(DPT_PULSE1_US);
+            g_dptState = DPT_PULSE;
+            SET_PHASE_DURATION(DPT_PULSE_US);
             break;
 
-        // turn off first pulse
-        case DPT_PULSE1:
-            g_cycP1End = readCycleCounter();
-            PROBE_TOGGLE();                 
-            GATE_LOW();                    
-
-            g_dptState = DPT_DEADTIME;
-            SET_PHASE_DURATION(DPT_DEADTIME_US);
+        // dpt section (on)
+        case DPT_PULSE:
+            g_cycPulseEnd[g_pulseIdx] = readCycleCounter();
+            PROBE_TOGGLE();    
+            GATE_LOW();
+ 
+            if(g_pulseIdx < (DPT_NUM_PULSES - 1U))
+            {
+                // update the pulse number we're on and move onto the deadtime
+                g_pulseIdx++;
+                g_dptState = DPT_DEADTIME;
+                SET_PHASE_DURATION(DPT_DEADTIME_US);
+            }
+            else
+            {
+                // done with the entire cycle, reset everything and finish
+                PROBE_LOW();                
+                g_cycleCount++;
+                g_dptState = DPT_DONE;
+            }
             break;
-
-        // turn on second pulse
+    
+        // dpt section (off)
         case DPT_DEADTIME:
-            g_cycP2Start = readCycleCounter();
-            PROBE_TOGGLE();                
-            GATE_HIGH();                     
-
-            g_dptState = DPT_PULSE2;
-            SET_PHASE_DURATION(DPT_PULSE2_US);
+            g_cycPulseStart[g_pulseIdx] = readCycleCounter();
+            PROBE_TOGGLE();          
+            GATE_HIGH();
+ 
+            g_dptState = DPT_PULSE;
+            SET_PHASE_DURATION(DPT_PULSE_US);
             break;
-
-        // turn off second pulse
-        case DPT_PULSE2:
-            g_cycP2End = readCycleCounter();
-
-            GATE_LOW();                      
-            PROBE_LOW();                   
-
-            g_dptState = DPT_DONE;
-            break;
+        
 
         default:
             break;
