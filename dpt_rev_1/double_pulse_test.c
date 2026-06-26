@@ -20,10 +20,11 @@
 #include "board.h"
 
 //THESE ARE THE VALUES TO EDIT -- all timing is in us// 
-#define DPT_BOOT_CHARGE_US  20  // time to charge bootstrap cap 
-#define DPT_BOOT_GAP_US     3   // time after first pulse before DPT
-#define DPT_PULSE_US        5  // first pulse
-#define DPT_DEADTIME_US     5   // off-time
+#define DPT_BOOT_CHARGE_US  20U // time to charge bootstrap cap 
+#define DPT_BOOT_GAP_US     3U  // time after first pulse before DPT
+#define DPT_PULSE_US        5U  // first pulse
+#define DPT_DEADTIME_US     5U  // off-time
+#define DPT_INTER_CYCLE_US  50U // time between cycles
 // #define DPT_PULSE2_US       2   // second pulse
 // #define DPT_SINGLE_SHOT       1   // 1 for one go-around, 0 will repeat forever
 
@@ -38,7 +39,9 @@
 // and change DPT_SYSCLK_MHZ to reflect the divided clock.
  
 #define DPT_SYSCLK_MHZ_INT      (DEVICE_SYSCLK_FREQ / 1000000UL)
-#define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT)
+#define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT / 2U)
+// #define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT)
+// trying to fix the above to be (sysclk_mhz_init/2) so that it matches epwmclk
 
 //checks
 #if US_TO_TBCNT_PP(DPT_BOOT_CHARGE_US) > 65535UL
@@ -234,7 +237,7 @@ __interrupt void epwm1ISR(void)
 
         // ready for actual dpt
         case DPT_BOOT_GAP:
-            g_cycP1Start = readCycleCounter();
+            g_cycPulseStart[g_pulseIdx] = readCycleCounter();
             PROBE_TOGGLE();                  
             GATE_HIGH();                    
 
@@ -395,7 +398,7 @@ static inline uint32_t readCycleCounter(void)
 //  
 //  pin for low-side gate   - myEPWM2_BASE / myEPWM2_GPIO in board.h
 //  pin for main dpt gate   - myEPWM1_BASE / myEPWM1_GPIO in board.h
-//  scope probe pin         - DPT_PROBE_GPIO (default 22)
+//  scope probe pin         - DPT_PROBE_GPIO (default 35)
 //  
 //  CCS Expressions for timing analysis (again, all in microseconds):
 //      (g_cycBootEnd - g_cycBootStart) / 200.0   → bootstrap charge time
