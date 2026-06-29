@@ -22,8 +22,9 @@
 //THESE ARE THE VALUES TO EDIT -- all timing is in us// 
 #define DPT_BOOT_CHARGE_US  20U // time to charge bootstrap cap 
 #define DPT_BOOT_GAP_US     3U  // time after first pulse before DPT
-#define DPT_PULSE_US        5U  // first pulse
+#define DPT_PULSE1_US       5U  // first pulse
 #define DPT_DEADTIME_US     5U  // off-time
+#define DPT_PULSE2PLUS_US   2U  // intervals after first
 #define DPT_INTER_CYCLE_US  50U // time between cycles
 // #define DPT_PULSE2_US       2   // second pulse
 // #define DPT_SINGLE_SHOT       1   // 1 for one go-around, 0 will repeat forever
@@ -117,7 +118,7 @@ typedef enum {
     DPT_IDLE        = 0,
     DPT_BOOT_CHARGE = 1,
     DPT_BOOT_GAP    = 2,
-    DPT_PULSE       = 3,
+    DPT_PULSE1      = 3,
     DPT_DEADTIME    = 4,
     DPT_DONE        = 5
 } DPT_State;
@@ -241,12 +242,12 @@ __interrupt void epwm1ISR(void)
             PROBE_TOGGLE();                  
             GATE_HIGH();                    
 
-            g_dptState = DPT_PULSE;
-            SET_PHASE_DURATION(DPT_PULSE_US);
+            g_dptState = DPT_PULSE1;
+            SET_PHASE_DURATION(DPT_PULSE1_US);
             break;
 
         // dpt section (on)
-        case DPT_PULSE:
+        case DPT_PULSE1:
             g_cycPulseEnd[g_pulseIdx] = readCycleCounter();
             PROBE_TOGGLE();    
             GATE_LOW();
@@ -272,11 +273,32 @@ __interrupt void epwm1ISR(void)
             g_cycPulseStart[g_pulseIdx] = readCycleCounter();
             PROBE_TOGGLE();          
             GATE_HIGH();
- 
-            g_dptState = DPT_PULSE;
-            SET_PHASE_DURATION(DPT_PULSE_US);
+
+            // if statement here to see if we want to go to DPT_PULSE2PLUS or not
+            g_dptState = DPT_PULSE1;
+            SET_PHASE_DURATION(DPT_PULSE1_US);
             break;
         
+        // case DPT_PULSE2PLUS:
+        //     g_cycPulseEnd[g_pulseIdx] = readCycleCounter();
+        //     PROBE_TOGGLE();    
+        //     GATE_LOW();
+ 
+        //     if(g_pulseIdx < (DPT_NUM_PULSES - 1U))
+        //     {
+        //         // update the pulse number we're on and move onto the deadtime
+        //         g_pulseIdx++;
+        //         g_dptState = DPT_DEADTIME;
+        //         SET_PHASE_DURATION(DPT_DEADTIME_US);
+        //     }
+        //     else
+        //     {
+        //         // done with the entire cycle, reset everything and finish
+        //         PROBE_LOW();                
+        //         g_cycleCount++;
+        //         g_dptState = DPT_DONE;
+        //     }
+        //     break;
 
         default:
             break;
