@@ -2,7 +2,9 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-CG_TOOL_ROOT := /Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS
+SHELL = cmd.exe
+
+CG_TOOL_ROOT := C:/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS
 
 GEN_OPTS__FLAG := --cmd_file="syscfg/board.opt" --cmd_file="syscfg/c2000ware_libraries.opt" 
 GEN_CMDS__FLAG := 
@@ -14,14 +16,14 @@ ORDERED_OBJS += \
 "./device/F2837xD_CodeStartBranch.obj" \
 "./device/device.obj" \
 "../2837xD_RAM_lnk_cpu1.cmd" \
-"/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib" \
+"C:/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
 
 -include ../makefile.init
 
-RM := rm -rf
-RMDIR := rm -rf
+RM := DEL /F
+RMDIR := RMDIR /S/Q
 
 # All of the sources participating in the build are defined here
 -include sources.mk
@@ -132,16 +134,16 @@ all: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Tool invocations
 dpt_rev_1.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'C2000 Linker - building target: "$@"'
-	"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 -Ooff --define=DEBUG --define=CPU1 --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"dpt_rev_1.map" --heap_size=0x200 --stack_size=0x3F8 --warn_sections -i"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/lib" -i"/Applications/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/include" --reread_libs --define=RAM --diag_wrap=off --display_error_number --xml_link_info="dpt_rev_1_linkInfo.xml" --entry_point=code_start --rom_model -o "dpt_rev_1.out" $(ORDERED_OBJS)
+	"C:/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 -Ooff --define=DEBUG --define=CPU1 --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"dpt_rev_1.map" --heap_size=0x200 --stack_size=0x3F8 --warn_sections -i"C:/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/lib" -i"C:/ti/ccs2100/ccs/tools/compiler/ti-cgt-c2000_25.11.1.LTS/include" --reread_libs --define=RAM --diag_wrap=off --display_error_number --xml_link_info="dpt_rev_1_linkInfo.xml" --entry_point=code_start --rom_model -o "dpt_rev_1.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "double_pulse_test.obj" "syscfg/board.obj" "syscfg/c2000ware_libraries.obj" "device/F2837xD_CodeStartBranch.obj" "device/device.obj" 
-	-$(RM) "double_pulse_test.d" "syscfg/board.d" "syscfg/c2000ware_libraries.d" "device/device.d" 
-	-$(RM) "device/F2837xD_CodeStartBranch.d" 
+	-$(RM) "double_pulse_test.obj" "syscfg\board.obj" "syscfg\c2000ware_libraries.obj" "device\F2837xD_CodeStartBranch.obj" "device\device.obj" 
+	-$(RM) "double_pulse_test.d" "syscfg\board.d" "syscfg\c2000ware_libraries.d" "device\device.d" 
+	-$(RM) "device\F2837xD_CodeStartBranch.d" 
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
 	-@echo ' '
 

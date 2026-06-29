@@ -20,14 +20,15 @@
 #include "board.h"
 
 //THESE ARE THE VALUES TO EDIT -- all timing is in us// 
-#define DPT_BOOT_CHARGE_US  20U // time to charge bootstrap cap 
-#define DPT_BOOT_GAP_US     3U  // time after first pulse before DPT
-#define DPT_PULSE1_US       5U  // first pulse
-#define DPT_DEADTIME_US     5U  // off-time
-#define DPT_PULSE2PLUS_US   2U  // intervals after first
-#define DPT_INTER_CYCLE_US  50U // time between cycles
-// #define DPT_PULSE2_US       2   // second pulse
-// #define DPT_SINGLE_SHOT       1   // 1 for one go-around, 0 will repeat forever
+// NOTE -- all timing needs to be greater than 3.2us in order for it to actually work -- will add in a check for this later / see if the code
+// can be optimized further to reduce the offset. 
+#define DPT_BOOT_CHARGE_US  20      // time to charge bootstrap cap 
+#define DPT_BOOT_GAP_US     4       // time after first pulse before DPT
+#define DPT_PULSE1_US       5       // first pulse
+#define DPT_DEADTIME_US     5       // off-time
+#define DPT_PULSE2PLUS_US   4       // intervals after first
+#define DPT_INTER_CYCLE_US  50      // time between cycles
+#define CYCLE_OFFSET        3.2     // offset time so that everything corresponds to actual runtime
 
 #define DPT_NUM_PULSES      5U
 #define DPT_NUM_CYCLES      0U   // 0 goes on forever. 1,2,3, etc. gives finite number of cycles
@@ -39,8 +40,8 @@
 // if need longer than 327 us, increase EPWM_CLOCK_DIVIDER in initEPWM() functions
 // and change DPT_SYSCLK_MHZ to reflect the divided clock.
  
-#define DPT_SYSCLK_MHZ_INT      (DEVICE_SYSCLK_FREQ / 1000000UL)
-#define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT / 2U)
+#define DPT_SYSCLK_MHZ_INT      (DEVICE_SYSCLK_FREQ / 2000000UL)
+#define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT)
 // #define US_TO_TBCNT_PP(us)      ((us) * DPT_SYSCLK_MHZ_INT)
 // trying to fix the above to be (sysclk_mhz_init/2) so that it matches epwmclk
 
@@ -120,7 +121,8 @@ typedef enum {
     DPT_BOOT_GAP    = 2,
     DPT_PULSE1      = 3,
     DPT_DEADTIME    = 4,
-    DPT_DONE        = 5
+    DPT_PULSE2PLUS  = 5,
+    DPT_DONE        = 6
 } DPT_State;
 
 volatile DPT_State g_dptState = DPT_IDLE;
@@ -192,7 +194,7 @@ void main(void)
             else
             {
                 // move to the next cycle
-                DEVICE_DELAY_US(DPT_INTER_CYCLE_US);
+                DEVICE_DELAY_US(DPT_INTER_CYCLE_US-CYCLE_OFFSET);
                 armSequence();
             }
         }
@@ -213,7 +215,7 @@ static void armSequence(void)
 
     // start it up
     BOOT_PIN_HIGH();
-    SET_PHASE_DURATION(DPT_BOOT_CHARGE_US);
+    SET_PHASE_DURATION(DPT_BOOT_CHARGE_US-CYCLE_OFFSET);
 }
 // ePWM1 ISR will drive all of the different parts of the program. 
 // it stops the counter, does its action, records timestamp, sets up the next phase, and resets ctr
@@ -233,7 +235,7 @@ __interrupt void epwm1ISR(void)
             BOOT_PIN_LOW();                
 
             g_dptState = DPT_BOOT_GAP;
-            SET_PHASE_DURATION(DPT_BOOT_GAP_US);
+            SET_PHASE_DURATION(DPT_BOOT_GAP_US-CYCLE_OFFSET);
             break;
 
         // ready for actual dpt
@@ -243,7 +245,7 @@ __interrupt void epwm1ISR(void)
             GATE_HIGH();                    
 
             g_dptState = DPT_PULSE1;
-            SET_PHASE_DURATION(DPT_PULSE1_US);
+            SET_PHASE_DURATION(DPT_PULSE1_US-CYCLE_OFFSET);
             break;
 
         // dpt section (on)
@@ -254,14 +256,14 @@ __interrupt void epwm1ISR(void)
  
             if(g_pulseIdx < (DPT_NUM_PULSES - 1U))
             {
-                // update the pulse number we're on and move onto the deadtime
+                // case when there is more than one pulse, and we're moving onto the deadtime
                 g_pulseIdx++;
                 g_dptState = DPT_DEADTIME;
-                SET_PHASE_DURATION(DPT_DEADTIME_US);
+                SET_PHASE_DURATION(DPT_DEADTIME_US-CYCLE_OFFSET);
             }
             else
             {
-                // done with the entire cycle, reset everything and finish
+                // case when there was only one pulse, and the loop finishes
                 PROBE_LOW();                
                 g_cycleCount++;
                 g_dptState = DPT_DONE;
@@ -274,31 +276,32 @@ __interrupt void epwm1ISR(void)
             PROBE_TOGGLE();          
             GATE_HIGH();
 
-            // if statement here to see if we want to go to DPT_PULSE2PLUS or not
-            g_dptState = DPT_PULSE1;
-            SET_PHASE_DURATION(DPT_PULSE1_US);
+            // this will go straight to PULSE2PLUS, because if there was only one pulse then it would've already finished
+            g_dptState = DPT_PULSE2PLUS;
+            SET_PHASE_DURATION(DPT_PULSE2PLUS_US-CYCLE_OFFSET);
             break;
         
-        // case DPT_PULSE2PLUS:
-        //     g_cycPulseEnd[g_pulseIdx] = readCycleCounter();
-        //     PROBE_TOGGLE();    
-        //     GATE_LOW();
+        case DPT_PULSE2PLUS:
+            // defining this case so that pulses after the first pulse to charge inductor current can be a different length
+            g_cycPulseEnd[g_pulseIdx] = readCycleCounter();
+            PROBE_TOGGLE();    
+            GATE_LOW();
  
-        //     if(g_pulseIdx < (DPT_NUM_PULSES - 1U))
-        //     {
-        //         // update the pulse number we're on and move onto the deadtime
-        //         g_pulseIdx++;
-        //         g_dptState = DPT_DEADTIME;
-        //         SET_PHASE_DURATION(DPT_DEADTIME_US);
-        //     }
-        //     else
-        //     {
-        //         // done with the entire cycle, reset everything and finish
-        //         PROBE_LOW();                
-        //         g_cycleCount++;
-        //         g_dptState = DPT_DONE;
-        //     }
-        //     break;
+            if(g_pulseIdx < (DPT_NUM_PULSES - 1U))
+            {
+                // update the pulse number we're on and move onto the deadtime
+                g_pulseIdx++;
+                g_dptState = DPT_DEADTIME;
+                SET_PHASE_DURATION(DPT_DEADTIME_US-CYCLE_OFFSET);
+            }
+            else
+            {
+                // done with the entire cycle, reset everything and finish
+                PROBE_LOW();                
+                g_cycleCount++;
+                g_dptState = DPT_DONE;
+            }
+            break;
 
         default:
             break;
@@ -320,7 +323,7 @@ static void initEPWM1(void)
 
     EPWM_setTimeBaseCounterMode(myEPWM1_BASE, EPWM_COUNTER_MODE_STOP_FREEZE);
     EPWM_setTimeBaseCounter(myEPWM1_BASE, 0U);
-    EPWM_setTimeBasePeriod(myEPWM1_BASE, US_TO_TBCNT(DPT_BOOT_CHARGE_US));
+    EPWM_setTimeBasePeriod(myEPWM1_BASE, US_TO_TBCNT(DPT_BOOT_CHARGE_US-CYCLE_OFFSET));
     EPWM_setPeriodLoadMode(myEPWM1_BASE, EPWM_PERIOD_DIRECT_LOAD);
 
     // disables AQ, since we're using SW

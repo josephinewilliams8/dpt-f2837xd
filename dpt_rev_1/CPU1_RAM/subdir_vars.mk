@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
+SHELL = cmd.exe
+
 # Add inputs and outputs from these tool invocations to the build variables 
 CMD_SRCS += \
 ../2837xD_RAM_lnk_cpu1.cmd 
@@ -10,7 +12,7 @@ SYSCFG_SRCS += \
 ../epwm_ex2_updown_aq.syscfg 
 
 LIB_SRCS += \
-/Applications/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib 
+C:/ti/c2000/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib 
 
 C_SRCS += \
 ../double_pulse_test.c \
@@ -55,29 +57,29 @@ GEN_MISC_DIRS__QUOTED += \
 
 OBJS__QUOTED += \
 "double_pulse_test.obj" \
-"syscfg/board.obj" \
-"syscfg/c2000ware_libraries.obj" 
+"syscfg\board.obj" \
+"syscfg\c2000ware_libraries.obj" 
 
 GEN_MISC_FILES__QUOTED += \
-"syscfg/board.h" \
-"syscfg/board.cmd.genlibs" \
-"syscfg/board.json" \
-"syscfg/pinmux.csv" \
-"syscfg/epwm.dot" \
-"syscfg/c2000ware_libraries.cmd.genlibs" \
-"syscfg/c2000ware_libraries.h" \
-"syscfg/clocktree.h" 
+"syscfg\board.h" \
+"syscfg\board.cmd.genlibs" \
+"syscfg\board.json" \
+"syscfg\pinmux.csv" \
+"syscfg\epwm.dot" \
+"syscfg\c2000ware_libraries.cmd.genlibs" \
+"syscfg\c2000ware_libraries.h" \
+"syscfg\clocktree.h" 
 
 C_DEPS__QUOTED += \
 "double_pulse_test.d" \
-"syscfg/board.d" \
-"syscfg/c2000ware_libraries.d" 
+"syscfg\board.d" \
+"syscfg\c2000ware_libraries.d" 
 
 GEN_FILES__QUOTED += \
-"syscfg/board.c" \
-"syscfg/board.opt" \
-"syscfg/c2000ware_libraries.opt" \
-"syscfg/c2000ware_libraries.c" 
+"syscfg\board.c" \
+"syscfg\board.opt" \
+"syscfg\c2000ware_libraries.opt" \
+"syscfg\c2000ware_libraries.c" 
 
 C_SRCS__QUOTED += \
 "../double_pulse_test.c" \
