@@ -11,3 +11,4 @@ EPWM2A, Chg Pulse     = GPIO 2 / pin 53 on control card
 
 DPT_Probe             = GPIO 35 / pin 121 on control card
 
+<img width="1744" height="724" alt="image" src="https://github.com/user-attachments/assets/ffb2c66f-fbae-41af-8265-04c5427c2934" />
