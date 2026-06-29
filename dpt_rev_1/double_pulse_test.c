@@ -2,13 +2,14 @@
 // 
 // Double Pulse Test — TMS320F2837xD (CPU1)
 //
-// five sections right now:
+// six cases right now:
 //  - starts with initial burst on GPIO0 [ePWM1A] to charge the bootstrap caps. 
 //    next, goes into actual DPT with GPIO2 [ePWM2A]. 
-//  - deadtime
-//  - pulse on
-//  - pulse off [repeat for configured num of cycles]
-//  - finished
+//  - boot deadtime
+//  - first pulse
+//  - pulse deadtime
+//  - second pulse
+//  - done
 // timing can be configured below. 
 //
 // gpio35 is set up to be a "timing probe" -- basically shows when the sequence has begun/is in process
@@ -23,15 +24,15 @@
 // NOTE -- all timing needs to be greater than 3.2us in order for it to actually work -- will add in a check for this later / see if the code
 // can be optimized further to reduce the offset. 
 #define DPT_BOOT_CHARGE_US  20      // time to charge bootstrap cap 
-#define DPT_BOOT_GAP_US     4       // time after first pulse before DPT
-#define DPT_PULSE1_US       5       // first pulse
+#define DPT_BOOT_GAP_US     10       // time after first pulse before DPT
+#define DPT_PULSE1_US       10       // first pulse
 #define DPT_DEADTIME_US     5       // off-time
-#define DPT_PULSE2PLUS_US   4       // intervals after first
-#define DPT_INTER_CYCLE_US  50      // time between cycles
-#define CYCLE_OFFSET        3.2     // offset time so that everything corresponds to actual runtime
+#define DPT_PULSE2PLUS_US   3.8       // intervals after first
+#define DPT_INTER_CYCLE_US  100      // time between cycles
+#define CYCLE_OFFSET        3     // offset time so that everything corresponds to actual runtime
 
-#define DPT_NUM_PULSES      5U
-#define DPT_NUM_CYCLES      0U   // 0 goes on forever. 1,2,3, etc. gives finite number of cycles
+#define DPT_NUM_PULSES      2U
+#define DPT_NUM_CYCLES      1U   // 0 goes on forever. 1,2,3, etc. gives finite number of cycles
 
 
 // CONSTANTS--
@@ -427,7 +428,7 @@ static inline uint32_t readCycleCounter(void)
 //  
 //  CCS Expressions for timing analysis (again, all in microseconds):
 //      (g_cycBootEnd - g_cycBootStart) / 200.0   → bootstrap charge time
-//      (g_cycP1Start - g_cycBootEnd)   / 200.0   → bootstrap gap
-//      (g_cycP1End   - g_cycP1Start)   / 200.0   → pulse 1
-//      (g_cycP2Start - g_cycP1End)     / 200.0   → dead-time
-//      (g_cycP2End   - g_cycP2Start)   / 200.0   → pulse 2
+//      (g_cycPulseStart[0] - g_cycBootEnd)   / 200.0   → bootstrap gap
+//      (g_cycPulseEnd[0]   - g_cycPulseStart[0])   / 200.0   → pulse 1
+//      (g_cycPulseStart[1] - g_cycPulseEnd[0])     / 200.0   → dead-time
+//      (g_cycPulseEnd[1]   - g_cycPulseStart[1])   / 200.0   → pulse 2
